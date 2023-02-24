@@ -1,0 +1,26 @@
+# Analyze before publish: flutter pub publish --dry-run
+# Publish: flutter pub publish
+name: remote_config_feature_manager
+description: Firebase Remote Config feature manager for developer preferences, experiments, A/B tests etc.
+version: 1.0.0
+repository: https://github.com/theRealGetman/remote-config-feature-manager
+issue_tracker: https://github.com/theRealGetman/remote-config-feature-manager/issues
+
+environment:
+  sdk: '>=2.19.0 <3.0.0'
+  flutter: ">=1.17.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  feature_manager: ^1.1.0
+  firebase_remote_config: ^3.0.13
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^2.0.0
+
+# The following section is specific to Flutter packages.
+flutter:
+
