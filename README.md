@@ -5,6 +5,8 @@
 Feature manager allows you to hide some unfinished/secret feature from your users, or experiments, that can be managed
 from remote data source or local settings.
 
+If you need only local feature toggles or preferences use [Feature Manager](https://pub.dev/packages/feature_manager)
+
 ![Example 01](doc/feature-manager-1.png) ![Example 02](doc/feature-manager-2.png)
 
 ## Getting Started
@@ -13,7 +15,7 @@ from remote data source or local settings.
 - [Basic Usage](#basic-usage)
 - If you want to use A/B testing or feature toggling with Firebase Remote Config use [Remote Config Feature Manager](https://google.com)
 
-### Installation
+## Installation
 
 Add
 
@@ -29,11 +31,11 @@ flutter packages get
 
 in your project's root directory.
 
-Setup Firebase Remote Config in your project.
+### Setup Firebase Remote Config in your project.
 
 To get started with Firebase Remote Config for Flutter, please [see the documentation](https://firebase.flutter.dev/docs/remote-config/overview) available at https://firebase.flutter.dev
 
-### Basic Usage
+## Basic Usage
 
 #### Create feature list
 

@@ -181,10 +181,10 @@ packages:
     dependency: transitive
     description:
       name: feature_manager
-      sha256: eb6f0c8322715ed526f0c964d4e7b913c7dd311a968973644ba6a872b514c903
+      sha256: "94aab5a0dcd2d4b381a04f947944d2bfd891be204e06330d49c679ab5451d84e"
       url: "https://pub.dev"
     source: hosted
-    version: "1.1.0"
+    version: "1.1.1"
   ffi:
     dependency: transitive
     description:
@@ -510,7 +510,7 @@ packages:
       path: ".."
       relative: true
     source: path
-    version: "0.0.1"
+    version: "1.0.1"
   shared_preferences:
     dependency: "direct main"
     description:
