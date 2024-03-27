@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:remote_config_feature_manager/remote_config_feature_manager.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:provider/provider.dart';
-import 'package:firebase_remote_config/firebase_remote_config.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
 
@@ -11,16 +10,12 @@ import 'features.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  final SharedPreferences sharedPreferences =
-      await SharedPreferences.getInstance();
+  final SharedPreferences sharedPreferences = await SharedPreferences.getInstance();
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
-  final FirebaseRemoteConfig remoteConfig = FirebaseRemoteConfig.instance;
-  final RemoteConfigFeatureManager featureManager = RemoteConfigFeatureManager(
-    sharedPreferences: sharedPreferences,
-    firebaseRemoteConfig: remoteConfig,
-  );
+  final RemoteConfigFeatureManager featureManager =
+      await RemoteConfigFeatureManager.getInstance();
   await featureManager.activate(
     Features.values,
     minimumFetchInterval: const Duration(
@@ -68,9 +63,8 @@ class MyHomePage extends StatefulWidget {
 class _MyHomePageState extends State<MyHomePage> {
   @override
   Widget build(BuildContext context) {
-    final bool isEnabled = context
-        .read<RemoteConfigFeatureManager>()
-        .isEnabled(Features.booleanFeature);
+    final bool isEnabled =
+        context.read<RemoteConfigFeatureManager>().isEnabled(Features.booleanFeature);
     return Scaffold(
       appBar: AppBar(
         title: const Text('Feature Manager Demo Application'),
@@ -81,8 +75,7 @@ class _MyHomePageState extends State<MyHomePage> {
           children: [
             Text.rich(
               TextSpan(
-                text:
-                    'Feature toggle ${Features.booleanFeature.remoteSourceKey} >>> ',
+                text: 'Feature toggle ${Features.booleanFeature.remoteSourceKey} >>> ',
                 children: <InlineSpan>[
                   TextSpan(
                     text: isEnabled ? 'enabled' : 'disabled',
@@ -100,8 +93,7 @@ class _MyHomePageState extends State<MyHomePage> {
                 Navigator.of(context)
                     .push(
                   MaterialPageRoute(
-                    builder: (BuildContext context) =>
-                        DeveloperPreferencesScreen(
+                    builder: (BuildContext context) => DeveloperPreferencesScreen(
                       featuresList: Features.values,
                       sharedPreferences: context.read(),
                     ),

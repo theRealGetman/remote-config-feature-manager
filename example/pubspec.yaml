@@ -14,7 +14,7 @@ dependencies:
   remote_config_feature_manager:
     path: ../
 
-  firebase_remote_config: ^3.0.13
+  firebase_remote_config: ^4.3.17
   provider: ^6.1.2
   shared_preferences: ^2.2.2
 
