@@ -1,17 +1,21 @@
+## 3.0.0
+
+- Updated to the latest `FeatureManager` changes
+
 ## 2.0.0
 
-* Updated to the latest `FeatureManager` changes
-* Added documentation
-* Removed specified dependencies versions
+- Updated to the latest `FeatureManager` changes
+- Added documentation
+- Removed specified dependencies versions
 
 ## 1.0.2
 
-* Upgraded Dart and Flutter versions
+- Upgraded Dart and Flutter versions
 
 ## 1.0.1
 
-* Updated Readme
+- Updated Readme
 
 ## 1.0.0
 
-* Initial release
+- Initial release

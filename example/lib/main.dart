@@ -10,14 +10,15 @@ import 'features.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  final SharedPreferences sharedPreferences = await SharedPreferences.getInstance();
+  final SharedPreferences sharedPreferences =
+      await SharedPreferences.getInstance();
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
   final RemoteConfigFeatureManager featureManager =
       await RemoteConfigFeatureManager.getInstance();
   await featureManager.activate(
-    Features.values,
+    Features.instance().values,
     minimumFetchInterval: const Duration(
       minutes: 5,
     ),
@@ -63,8 +64,9 @@ class MyHomePage extends StatefulWidget {
 class _MyHomePageState extends State<MyHomePage> {
   @override
   Widget build(BuildContext context) {
-    final bool isEnabled =
-        context.read<RemoteConfigFeatureManager>().isEnabled(Features.booleanFeature);
+    final feature = context.read<RemoteConfigFeatureManager>().booleanFeature;
+    final bool isEnabled = feature.isEnabled;
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Feature Manager Demo Application'),
@@ -75,7 +77,7 @@ class _MyHomePageState extends State<MyHomePage> {
           children: [
             Text.rich(
               TextSpan(
-                text: 'Feature toggle ${Features.booleanFeature.remoteSourceKey} >>> ',
+                text: 'Feature toggle ${feature.remoteSourceKey} >>> ',
                 children: <InlineSpan>[
                   TextSpan(
                     text: isEnabled ? 'enabled' : 'disabled',
@@ -93,8 +95,9 @@ class _MyHomePageState extends State<MyHomePage> {
                 Navigator.of(context)
                     .push(
                   MaterialPageRoute(
-                    builder: (BuildContext context) => DeveloperPreferencesScreen(
-                      featuresList: Features.values,
+                    builder: (BuildContext context) =>
+                        DeveloperPreferencesScreen(
+                      featuresList: Features.instance().values,
                       sharedPreferences: context.read(),
                     ),
                   ),

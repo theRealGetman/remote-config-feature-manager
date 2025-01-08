@@ -1,3 +1,4 @@
+import 'package:feature_manager/feature.dart';
 import 'package:feature_manager/feature_manager.dart';
 import 'package:firebase_remote_config/firebase_remote_config.dart';
 import 'package:flutter/foundation.dart';
@@ -45,6 +46,25 @@ class RemoteConfigFeatureManager implements FeatureManager {
       );
     }
     return _instance!;
+  }
+
+  /// Returns the singleton instance of [RemoteConfigFeatureManager].
+  ///
+  /// Throws an [Exception] if the instance is not initialized.
+  /// Ensure to call `getInstance()` before accessing this property.
+  static RemoteConfigFeatureManager get instance {
+    if (_instance == null) {
+      throw Exception(
+          'RemoteConfigFeatureManager is not initialized. Call getInstance() first.');
+    }
+    return _instance!;
+  }
+
+  /// Disposes the instance of the class.
+  ///
+  /// This function sets the `_instance` variable to `null`, effectively disposing of the instance.
+  static void dispose() {
+    _instance = null;
   }
 
   /// Activates the remote configuration with the provided list of features.
@@ -100,7 +120,8 @@ class RemoteConfigFeatureManager implements FeatureManager {
   /// the changes are reflected.
   void refresh(List<Feature> features) {
     // Retrieve all remote configurations from the Firebase remote config
-    final Map<String, RemoteConfigValue> remoteConfigs = _firebaseRemoteConfig.getAll();
+    final Map<String, RemoteConfigValue> remoteConfigs =
+        _firebaseRemoteConfig.getAll();
 
     // Iterate over the features list
     for (Feature feature in features) {
@@ -176,7 +197,8 @@ class RemoteConfigFeatureManager implements FeatureManager {
   ///
   /// Returns the decoded Map<String, dynamic> if the JSON string is not empty or null; otherwise, returns null.
   @override
-  Map<String, dynamic>? getJson(Feature feature) => _featureManager.getJson(feature);
+  Map<String, dynamic>? getJson(Feature feature) =>
+      _featureManager.getJson(feature);
 
   /// Retrieves a string value from the shared preferences based on the provided [feature] key.
   ///

@@ -20,7 +20,12 @@ If you need only local feature toggles or preferences use [Feature Manager](http
 Add
 
 ```bash
-remote_config_feature_manager : ^lastest_version
+dependencies:
+  remote_config_feature_manager : ^latest_version
+
+dev_dependencies:
+  build_runner:
+  feature_manager_generator: ^latest_version
 ```
 
 to your `pubspec.yaml`, and run
@@ -35,85 +40,133 @@ in your project's root directory.
 
 To get started with Firebase Remote Config for Flutter, please [see the documentation](https://firebase.flutter.dev/docs/remote-config/overview) available at https://firebase.flutter.dev
 
-## Basic Usage
+### Basic Usage
 
-#### Create feature list
+#### Creating Features with Code Generation
 
-Create file where you will store your feature list and create features inside. Don't forget to specify **remoteSourceKey** from Remote Config.
+Starting from version 3.0.0, `feature_manager` supports code generation to simplify feature creation and management.
+
+#### Steps to Use Code Generation:
+
+1. **Add Annotations to Your Features**
+
+Create a Dart file (e.g., app_features.dart) and define your features using the provided annotations:
 
 ```dart
-import 'package:remote_config_feature_manager/remote_config_feature_manager.dart';
+import 'package:feature_manager/annotations.dart';
+import 'package:feature_manager/feature.dart';
+import 'package:feature_manager/feature_manager.dart';
 
-class Features {
-  static const Feature textFeature = Feature(
+part 'features.g.dart';
+
+@FeatureManagerInit()
+class AppFeatures {
+  AppFeatures({
+    required this.textFeature,
+    required this.booleanFeature,
+    required this.doubleFeature,
+    required this.integerFeature,
+    required this.jsonFeature,
+  });
+
+  factory AppFeatures.instance() => _$AppFeatures();
+
+  @FeatureOptions(
     key: 'dev-prefs-text-pref',
-    remoteSourceKey: 'remote_prefs_text_pref',
+    remoteSourceKey: 'REMOTE-KEY-dev-prefs-text-pref',
     title: 'Text pref',
     description: 'This is text preference',
     defaultValue: '',
     valueType: FeatureValueType.text,
-  );
+  )
+  final Feature textFeature;
 
-  static const Feature booleanFeature = Feature(
+  @FeatureOptions(
     key: 'dev-prefs-bool-pref',
     remoteSourceKey: 'remote_prefs_bool_pref',
     title: 'Toggle pref',
     description: 'This is toggle preference',
     defaultValue: false,
     valueType: FeatureValueType.toggle,
-  );
+  )
+  final Feature booleanFeature;
 
-  static const Feature doubleFeature = Feature(
+  @FeatureOptions(
     key: 'dev-prefs-double-pref',
-    remoteSourceKey: 'remote_prefs_double_pref',
     title: 'Number double pref',
     description: 'This is number double preference',
-    defaultValue: 0.0,
+    defaultValue: null,
     valueType: FeatureValueType.doubleNumber,
-  );
+  )
+  final Feature doubleFeature;
 
-  static const Feature integerFeature = Feature(
+  @FeatureOptions(
     key: 'dev-prefs-integer-pref',
-    remoteSourceKey: 'remote_prefs_integer_pref',
     title: 'Number integer pref',
     description: 'This is number integer preference',
-    defaultValue: 0,
+    defaultValue: null,
     valueType: FeatureValueType.integerNumber,
-  );
+  )
+  final Feature integerFeature;
 
-  static const Feature jsonFeature = Feature(
+  @FeatureOptions(
     key: 'dev-prefs-json-pref',
-    remoteSourceKey: 'remote_prefs_json_pref',
     title: 'Json pref',
     description: 'This is json preference',
-    defaultValue: """{"value": "Json default value"}""",
+    defaultValue: "{value: 'Json default value'}",
     valueType: FeatureValueType.json,
-  );
-
-  static const List<Feature> values = <Feature>[
-    Features.textFeature,
-    Features.booleanFeature,
-    Features.doubleFeature,
-    Features.integerFeature,
-    Features.jsonFeature,
-  ];
+  )
+  final Feature jsonFeature;
 }
 ```
 
-### Active feature manager
-To create RemoteConfigFeatureManger provide SharedPreferences and FirebaseRemoteConfig instances.
+- **Annotations**: Use the `@FeatureManagerInit()` annotation on the AppFeatures class to indicate that code should be generated.
+- **Feature Fields**: Annotate each feature field with `@FeatureOptions()` and provide the necessary parameters.
+- **Factory Constructor**: The factory AppFeatures.instance() returns an instance of the generated class \_$AppFeatures().
+- **Part Directive**: The part `'features.g.dart'`; directive tells Dart where to find the generated code.
+
+2. Run the Code Generator
+
+Execute the following command to generate the feature classes:
+
 ```dart
-...
-final RemoteConfigFeatureManager featureManager = RemoteConfigFeatureManager(
-          sharedPreferences: sharedPreferences,
-          firebaseRemoteConfig: remoteConfig,
-      );
-...
+flutter packages pub run build_runner build
 ```
 
-To fetch and active feature values use **activate** function.
+3. Use the Generated Features
+
+Import the generated file and use the features in your code:
+
+```dart
+import 'features.dart';
+// The generated part file is automatically included due to the 'part' directive.
+
+void main() {
+  final appFeatures = AppFeatures.instance();
+
+  // Access individual features
+  final textValue = appFeatures.textFeature.value;
+  final isEnabled = appFeatures.booleanFeature.isEnabled;
+
+  // Access all features using the extension
+  for (final feature in appFeatures.values) {
+    print('Feature key: ${feature.key}');
+  }
+}
+```
+
+- **Accessing Features**: You can access each feature via the instance of AppFeatures.
+- **Using the Extension**: An extension AppFeaturesExt is generated to provide a values getter, which returns a list of all features.
+
+### Activate feature manager
+
+To fetch and active feature values use **activate** function. You should call `RemoteConfigFeatureManager.getInstance()` function to initialize RemoteConfigFeatureManager instance with its dependencies. After that you can use `RemoteConfigFeatureManager.instance` all over the app.
+
 ```dart
 ...
+final featureManager =
+      await RemoteConfigFeatureManager.getInstance();
+
 await featureManager.activate(
             Features.values,
             minimumFetchInterval: const Duration(
@@ -124,25 +177,42 @@ await featureManager.activate(
 ```
 
 If you want to initialize FirebaseRemoteConfig elsewhere, you can just use **refresh** function to map remote values to your features.
+
 ```dart
 ...
 featureManager.refresh(Features.values);
 ...
 ```
 
-Using **RemoteConfigFeatureManager** check whether feature is enabled.
-Preferable way to create RemoteConfigFeatureManager instance is to use DI (Provider, GetIt etc.).
+#### Using Features
+
+To check whether a feature is enabled using RemoteConfigFeatureManager, you can create an instance via dependency injection (e.g., Provider, GetIt) or directly:
+
 ```dart
-...
-final bool isEnabled =
-    context.read<RemoteConfigFeatureManager>().isEnabled(Features.booleanFeature);
-...
+import 'package:feature_manager/feature_manager.dart';
+
+final featureManager = RemoteConfigFeatureManager.instance;
+
+final appFeatures = AppFeatures.instance();
+
+// Check if a feature is enabled
+final isEnabled = featureManager.isEnabled(appFeatures.booleanFeature);
+```
+
+Alternatively, since each feature provides an isEnabled property, you can directly access it:
+
+```dart
+final isEnabled = featureManager.booleanFeature.isEnabled;
+// OR
+final isEnabled = appFeatures.booleanFeature.isEnabled;
 ```
 
 #### Modify remote feature values in Firebase Console
+
 ![Example 01](doc/feature-manager-3.png)
 
 #### Modify feature values in DEBUG (develop) mode
+
 To do it, you can simply open DeveloperPreferences screen in any part of your app.
 You should pass list of your features as parameter for this screen.
 
@@ -159,24 +229,25 @@ Navigator.of(context).push(
 
 ### Feature parameters
 
-
-| Parameter                 |                       Default                       | Description                                                                                  |
-| :------------------------ | :-------------------------------------------------: |:---------------------------------------------------------------------------------------------|
-| **key** *String*          |                        required                     | This key will be used to store value in local storage.                                       |
-| **type** *FeatureType*    |                         `FeatureType.feature`       | It can be used to separate local features and experiments driven by some remote provider.    |
-| **valueType** *FeatureValueType*|                         required              | Type of value of the feature. If you need toggle, use `FeatureValueType.toggle`              |
-| **title** *String*        |                          required                   | Title that will be used inside Developer Preferences Screen.                                 |
-| **remoteSourceKey** *String*|                                                   | Key from remote source.                                                                      |
-| **description** *String*  |                                                     | Description that will be used inside Developer Preferences Screen.                           |
-| **value**  *Object?*      |                          Null                       | Stored value of the Feature. Will be fetched from local storage.                             |
-| **defaultValue** *Object?*|                   Null                              | Default value of the Feature. Will be returned by `FeatureManager` if stored value is `Null` |
+| Parameter                        |        Default        | Description                                                                                  |
+| :------------------------------- | :-------------------: | :------------------------------------------------------------------------------------------- |
+| **key** _String_                 |       required        | This key will be used to store value in local storage.                                       |
+| **type** _FeatureType_           | `FeatureType.feature` | It can be used to separate local features and experiments driven by some remote provider.    |
+| **valueType** _FeatureValueType_ |       required        | Type of value of the feature. If you need toggle, use `FeatureValueType.toggle`              |
+| **title** _String_               |       required        | Title that will be used inside Developer Preferences Screen.                                 |
+| **remoteSourceKey** _String_     |                       | Key from remote source.                                                                      |
+| **description** _String_         |                       | Description that will be used inside Developer Preferences Screen.                           |
+| **value** _Object?_              |         Null          | Stored value of the Feature. Will be fetched from local storage.                             |
+| **defaultValue** _Object?_       |         Null          | Default value of the Feature. Will be returned by `FeatureManager` if stored value is `Null` |
 
 ```dart
 enum FeatureType { feature, experiment }
 ```
+
 ```dart
 enum FeatureValueType { text, toggle, doubleNumber, integerNumber, json }
 ```
 
 ## Contributions
+
 Feel free to contact me (a.e.getman@gmail.com) or create Pull Requests/Issues for this repository :)
