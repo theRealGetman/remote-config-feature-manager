@@ -51,7 +51,7 @@ class _$Features implements Features {
           remoteSourceKey: '',
           title: 'Json pref',
           description: 'This is json preference',
-          defaultValue: '{value: \'Json default value\'}',
+          defaultValue: {"value": "Json default value"},
           type: FeatureType.feature,
         ),
         nullableTextFeature = TextFeature(

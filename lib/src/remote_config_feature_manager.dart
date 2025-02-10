@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:feature_manager/feature.dart';
 import 'package:feature_manager/feature_manager.dart';
 import 'package:firebase_remote_config/firebase_remote_config.dart';
@@ -87,7 +89,7 @@ class RemoteConfigFeatureManager implements FeatureManager {
       );
       await _firebaseRemoteConfig.setDefaults(defaultValues);
       await _firebaseRemoteConfig.fetchAndActivate();
-      refresh(features);
+      await refresh(features);
     } on PlatformException catch (e) {
       if (kDebugMode) {
         print('>>> RemoteConfig: fetch throttled: $e');
@@ -118,13 +120,13 @@ class RemoteConfigFeatureManager implements FeatureManager {
   ///
   /// After updating the shared preferences, the function reloads the shared preferences to ensure
   /// the changes are reflected.
-  void refresh(List<Feature> features) {
+  Future<void> refresh(List<Feature> features) async {
     // Retrieve all remote configurations from the Firebase remote config
     final Map<String, RemoteConfigValue> remoteConfigs =
         _firebaseRemoteConfig.getAll();
 
     // Iterate over the features list
-    for (Feature feature in features) {
+    final setFeatureFutures = features.map((feature) {
       // Check if a remote configuration exists for the feature's remote source key
       if (remoteConfigs.containsKey(feature.remoteSourceKey)) {
         // Retrieve the remote configuration value
@@ -138,38 +140,41 @@ class RemoteConfigFeatureManager implements FeatureManager {
         }
 
         // Update the shared preferences based on the feature's value type
-        switch (feature.valueType) {
-          case FeatureValueType.text:
-          case FeatureValueType.json:
-            _sharedPreferences.setString(
-              feature.key,
-              remoteConfigValue.asString(),
-            );
-            break;
-          case FeatureValueType.toggle:
-            _sharedPreferences.setBool(
-              feature.key,
-              remoteConfigValue.asBool(),
-            );
-            break;
-          case FeatureValueType.doubleNumber:
-            _sharedPreferences.setDouble(
-              feature.key,
-              remoteConfigValue.asDouble(),
-            );
-            break;
-          case FeatureValueType.integerNumber:
-            _sharedPreferences.setInt(
-              feature.key,
-              remoteConfigValue.asInt(),
-            );
-            break;
+        if (feature.isText) {
+          return _sharedPreferences.setString(
+            feature.key,
+            remoteConfigValue.asString(),
+          );
+        } else if (feature.isBoolean) {
+          return _sharedPreferences.setBool(
+            feature.key,
+            remoteConfigValue.asBool(),
+          );
+        } else if (feature.isDouble) {
+          return _sharedPreferences.setDouble(
+            feature.key,
+            remoteConfigValue.asDouble(),
+          );
+        } else if (feature.isInteger) {
+          return _sharedPreferences.setInt(
+            feature.key,
+            remoteConfigValue.asInt(),
+          );
+        } else if (feature.isJson) {
+          return _sharedPreferences.setString(
+            feature.key,
+            jsonEncode(remoteConfigValue.asString()),
+          );
         }
       }
-    }
+      return Future.value();
+    }).toList();
+
+    // Wait for all feature futures to complete
+    await Future.wait(setFeatureFutures);
 
     // Reload the shared preferences to ensure the changes are reflected
-    _sharedPreferences.reload();
+    await _sharedPreferences.reload();
   }
 
   /// Retrieves a double value associated with the given [feature].
@@ -180,7 +185,8 @@ class RemoteConfigFeatureManager implements FeatureManager {
   /// Returns the double value associated with the given [feature], or null if
   /// no value is found.
   @override
-  double? getDouble(Feature feature) => _featureManager.getDouble(feature);
+  double? getDouble(DoubleFeature feature) =>
+      _featureManager.getDouble(feature);
 
   /// Retrieves an integer value associated with the given [feature] from the shared preferences.
   ///
@@ -188,7 +194,7 @@ class RemoteConfigFeatureManager implements FeatureManager {
   ///
   /// Returns the integer value associated with the [feature] key in the shared preferences, or null if the key is not found.
   @override
-  int? getInt(Feature feature) => _featureManager.getInt(feature);
+  int? getInt(IntegerFeature feature) => _featureManager.getInt(feature);
 
   /// Retrieves and decodes a JSON string from the provided Feature object, returning the decoded Map<String, dynamic> or null if the string is empty or null.
   ///
@@ -197,7 +203,7 @@ class RemoteConfigFeatureManager implements FeatureManager {
   ///
   /// Returns the decoded Map<String, dynamic> if the JSON string is not empty or null; otherwise, returns null.
   @override
-  Map<String, dynamic>? getJson(Feature feature) =>
+  Map<String, dynamic>? getJson(JsonFeature feature) =>
       _featureManager.getJson(feature);
 
   /// Retrieves a string value from the shared preferences based on the provided [feature] key.
@@ -206,7 +212,7 @@ class RemoteConfigFeatureManager implements FeatureManager {
   ///
   /// Returns the string value associated with the [feature] key, or `null` if the key does not exist.
   @override
-  String? getString(Feature feature) => _featureManager.getString(feature);
+  String? getString(TextFeature feature) => _featureManager.getString(feature);
 
   /// Retrieves the value associated with the given [feature] from the shared preferences.
   ///
@@ -235,5 +241,5 @@ class RemoteConfigFeatureManager implements FeatureManager {
   /// Returns:
   /// - `bool`: `true` if the [feature] is enabled, `false` otherwise.
   @override
-  bool isEnabled(Feature feature) => _featureManager.isEnabled(feature);
+  bool isEnabled(BooleanFeature feature) => _featureManager.isEnabled(feature);
 }
